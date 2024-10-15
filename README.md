@@ -1,6 +1,6 @@
 # Terraform Infrastructure as Code (IaC) with GitHub Actions CI
 
-This project automates the setup of AWS networking infrastructure using Terraform and integrates it with GitHub Actions for Continuous Integration (CI) to ensure proper formatting and validation of Terraform configurations.
+This project automates the setup of AWS networking infrastructure using Terraform and integrates it with GitHub Actions for Continuous Integration (CI) to ensure proper formatting and validation of Terraform configurations..
 
 Requirements
 Before running the Terraform configuration or the GitHub Actions workflow, ensure you have the following:
