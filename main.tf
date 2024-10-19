@@ -138,8 +138,81 @@ resource "aws_security_group" "application_security_group" {
   }
 }
 
+
+# Create Security Group for RDS instance MySQL
+resource "aws_security_group" "db_security_group" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  ingress {
+    description     = "Allow MySQL traffic from the application_security_group only"
+    from_port       = var.db_port
+    to_port         = var.db_port
+    protocol        = "tcp"
+    security_groups = [aws_security_group.application_security_group.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.vpc_name}-db-sg"
+  }
+}
+
+
+# Create DB Subnet Group
+resource "aws_db_subnet_group" "db_subnet_group" {
+  name       = "${var.vpc_name}-db-subnet-group"
+  subnet_ids = aws_subnet.private_subnets[*].id
+
+  tags = {
+    Name = "${var.vpc_name}-db-subnet-group"
+  }
+}
+
+
+# Create an RDS Parameter Group
+resource "aws_db_parameter_group" "rds_parameter_group" {
+  name        = "${var.db_engine}-parameter-group"
+  family      = var.db_group_family
+  description = "RDS parameter group for ${var.db_engine}"
+  tags = {
+    Name = "${var.vpc_name}-rds-pg"
+  }
+}
+
+
+# Create RDS instance
+resource "aws_db_instance" "rds_instance" {
+  identifier             = "csye6225"
+  engine                 = var.db_engine
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 15
+  username               = var.db_username
+  password               = var.db_password
+  db_name                = var.db_name
+  parameter_group_name   = aws_db_parameter_group.rds_parameter_group.name
+  publicly_accessible    = false
+  vpc_security_group_ids = [aws_security_group.db_security_group.id]
+  db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
+  skip_final_snapshot    = true
+
+  tags = {
+    Name = "${var.vpc_name}-rds-instance"
+  }
+}
+
+
 # Create EC2 Instance
 resource "aws_instance" "webapp_instance" {
+
+  depends_on = [
+    aws_security_group.application_security_group
+  ]
   ami                         = var.ami_id
   instance_type               = "t2.micro"
   subnet_id                   = aws_subnet.public_subnets[0].id
@@ -151,6 +224,22 @@ resource "aws_instance" "webapp_instance" {
     volume_type           = "gp2"
     delete_on_termination = true
   }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              rm -f /opt/webapp/.env
+              touch /opt/webapp/.env
+              echo "DB_USER='${var.db_username}'" >> /opt/webapp/.env
+              echo "DB_PASSWORD='${var.db_password}'" >> /opt/webapp/.env
+              echo "DB_NAME='${var.db_name}'" >> /opt/webapp/.env
+              echo "PORT=${var.app_port}" >> /opt/webapp/.env
+              echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
+              sudo systemctl restart webapp.service
+              #echo "DB_HOST=${aws_db_instance.rds_instance.endpoint}" >> /etc/environment
+              #echo "DB_NAME=${var.db_name}" >> /etc/environment
+              #echo "DB_USER=${var.db_username}" >> /etc/environment
+              #echo "DB_PASSWORD=${var.db_password}" >> /etc/environment
+              EOF
 
   tags = {
     Name = "${var.vpc_name}-webapp-instance"

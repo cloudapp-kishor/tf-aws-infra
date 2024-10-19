@@ -26,3 +26,29 @@ variable "ami_id" {
 variable "app_port" {
   description = "Port on which the application runs"
 }
+
+variable "db_port" {
+  description = "Port on which the database runs"
+}
+
+variable "db_engine" {
+  description = "MySQL database engine"
+}
+
+variable "db_group_family" {
+  description = "RDS Parameter group family"
+}
+
+variable "db_username" {
+  description = "Database userame for RDS instance"
+}
+
+variable "db_password" {
+  description = "Database password for RDS instance"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_name" {
+  description = "Database name"
+}
