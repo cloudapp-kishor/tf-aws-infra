@@ -52,3 +52,15 @@ variable "db_password" {
 variable "db_name" {
   description = "Database name"
 }
+
+variable "route53_zone_id" {
+  description = "Zone ID for route 53"
+}
+
+variable "domain_name" {
+  description = "Domain name"
+}
+
+variable "env" {
+  description = "dev or demo"
+}
