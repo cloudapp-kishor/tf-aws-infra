@@ -235,11 +235,8 @@ resource "aws_instance" "webapp_instance" {
               echo "DB_NAME='${var.db_name}'" >> /opt/webapp/.env
               echo "PORT=${var.app_port}" >> /opt/webapp/.env
               echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
+              echo "S3_BUCKET_NAME='${aws_s3_bucket.csye6225_s3_bucket.bucket}'" >> /opt/webapp/.env
               sudo systemctl restart webapp.service
-              #echo "DB_HOST=${aws_db_instance.rds_instance.endpoint}" >> /etc/environment
-              #echo "DB_NAME=${var.db_name}" >> /etc/environment
-              #echo "DB_USER=${var.db_username}" >> /etc/environment
-              #echo "DB_PASSWORD=${var.db_password}" >> /etc/environment
               EOF
 
   tags = {
