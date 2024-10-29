@@ -237,6 +237,7 @@ resource "aws_instance" "webapp_instance" {
               echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
               echo "S3_BUCKET_NAME='${aws_s3_bucket.csye6225_s3_bucket.bucket}'" >> /opt/webapp/.env
               sudo systemctl restart webapp.service
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
               EOF
 
   tags = {
@@ -350,4 +351,34 @@ resource "aws_iam_policy" "access_policy" {
 resource "aws_iam_role_policy_attachment" "ec2_policy_attachment" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.access_policy.arn
+}
+
+# IAM Policy to allow CloudWatch actions
+resource "aws_iam_policy" "cloudwatch_agent_policy" {
+  name        = "CloudWatchAgentPolicy"
+  description = "Allows CloudWatch agent to publish metrics and logs and describe EC2 tags"
+  policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "cloudwatch:PutMetricData",
+          "ec2:DescribeTags",
+          "cloudwatch:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ],
+        "Resource": "*"
+      }
+    ]
+  })
+}
+
+# Attach policy to IAM Role
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.cloudwatch_agent_policy.arn
 }
