@@ -218,7 +218,7 @@ resource "aws_instance" "webapp_instance" {
   subnet_id                   = aws_subnet.public_subnets[0].id
   security_groups             = [aws_security_group.application_security_group.id]
   associate_public_ip_address = true
-  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
+  iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
 
   root_block_device {
     volume_size           = 25
@@ -257,8 +257,8 @@ resource "random_uuid" "bucket_uuid" {}
 
 # Create a private S3 bucket with default encryption and lifecycle policy
 resource "aws_s3_bucket" "csye6225_s3_bucket" {
-  bucket = "${random_uuid.bucket_uuid.result}"
-  acl    = "private"
+  bucket        = random_uuid.bucket_uuid.result
+  acl           = "private"
   force_destroy = true
 
   server_side_encryption_configuration {
@@ -274,7 +274,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "bucket_lifecycle" {
   bucket = aws_s3_bucket.csye6225_s3_bucket.id
 
   rule {
-    id     = "Transition to STANDARD_IA"
+    id = "Transition to STANDARD_IA"
     transition {
       days          = 30
       storage_class = "STANDARD_IA"
@@ -285,15 +285,15 @@ resource "aws_s3_bucket_lifecycle_configuration" "bucket_lifecycle" {
 
 # IAM Role for EC2 instance
 resource "aws_iam_role" "ec2_role" {
-  name               = "${var.vpc_name}-ec2-role"
+  name = "${var.vpc_name}-ec2-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action    = "sts:AssumeRole"
+      Action = "sts:AssumeRole"
       Principal = {
         Service = "ec2.amazonaws.com"
       }
-      Effect    = "Allow"
+      Effect = "Allow"
     }]
   })
 }
@@ -317,7 +317,7 @@ resource "aws_route53_record" "app_record" {
 resource "aws_iam_policy" "access_policy" {
   name        = "${var.vpc_name}-access-policy"
   description = "IAM policy for S3 and RDS access"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -360,11 +360,11 @@ resource "aws_iam_policy" "cloudwatch_agent_policy" {
   name        = "CloudWatchAgentPolicy"
   description = "Allows CloudWatch agent to publish metrics and logs and describe EC2 tags"
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Effect": "Allow",
-        "Action": [
+        "Effect" : "Allow",
+        "Action" : [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
@@ -373,7 +373,7 @@ resource "aws_iam_policy" "cloudwatch_agent_policy" {
           "cloudwatch:PutLogEvents",
           "logs:DescribeLogStreams"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       }
     ]
   })
