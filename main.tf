@@ -218,6 +218,7 @@ resource "aws_instance" "webapp_instance" {
   subnet_id                   = aws_subnet.public_subnets[0].id
   security_groups             = [aws_security_group.application_security_group.id]
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
 
   root_block_device {
     volume_size           = 25
@@ -234,11 +235,11 @@ resource "aws_instance" "webapp_instance" {
               echo "DB_NAME='${var.db_name}'" >> /opt/webapp/.env
               echo "PORT=${var.app_port}" >> /opt/webapp/.env
               echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
+              echo "S3_BUCKET_NAME='${aws_s3_bucket.csye6225_s3_bucket.bucket}'" >> /opt/webapp/.env
               sudo systemctl restart webapp.service
-              #echo "DB_HOST=${aws_db_instance.rds_instance.endpoint}" >> /etc/environment
-              #echo "DB_NAME=${var.db_name}" >> /etc/environment
-              #echo "DB_USER=${var.db_username}" >> /etc/environment
-              #echo "DB_PASSWORD=${var.db_password}" >> /etc/environment
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
+              sudo npm install -g statsd-cloudwatch-backend
+              statsd /opt/webapp/app/packer/statsd_config.js
               EOF
 
   tags = {
@@ -249,4 +250,137 @@ resource "aws_instance" "webapp_instance" {
   lifecycle {
     prevent_destroy = false
   }
+}
+
+# Generate a unique UUID for the bucket name
+resource "random_uuid" "bucket_uuid" {}
+
+# Create a private S3 bucket with default encryption and lifecycle policy
+resource "aws_s3_bucket" "csye6225_s3_bucket" {
+  bucket        = random_uuid.bucket_uuid.result
+  acl           = "private"
+  force_destroy = true
+
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "bucket_lifecycle" {
+  bucket = aws_s3_bucket.csye6225_s3_bucket.id
+
+  rule {
+    id = "Transition to STANDARD_IA"
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+    status = "Enabled"
+  }
+}
+
+# IAM Role for EC2 instance
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.vpc_name}-ec2-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Effect = "Allow"
+    }]
+  })
+}
+
+# Create an IAM Instance Profile and associate it with the IAM role
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "${var.vpc_name}-ec2-instance-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
+# Update Route 53 DNS settings
+resource "aws_route53_record" "app_record" {
+  zone_id = var.route53_zone_id
+  name    = "${var.env}.${var.domain_name}"
+  type    = "A"
+  records = [aws_instance.webapp_instance.public_ip]
+  ttl     = 60
+}
+
+# IAM Policy for S3 and RDS access
+resource "aws_iam_policy" "access_policy" {
+  name        = "${var.vpc_name}-access-policy"
+  description = "IAM policy for S3 and RDS access"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+          "s3:PutLifecycleConfiguration",
+          "s3:PutObjectAcl",
+          "s3:GetObjectAcl",
+          "s3:PutBucketAcl"
+        ]
+        Resource = [
+          "${aws_s3_bucket.csye6225_s3_bucket.arn}/*",
+          "${aws_s3_bucket.csye6225_s3_bucket.arn}"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances",
+          "rds:Connect"
+        ]
+        Resource = aws_db_instance.rds_instance.arn
+      }
+    ]
+  })
+}
+
+# Attach policy to EC2 role
+resource "aws_iam_role_policy_attachment" "ec2_policy_attachment" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.access_policy.arn
+}
+
+# IAM Policy to allow CloudWatch actions
+resource "aws_iam_policy" "cloudwatch_agent_policy" {
+  name        = "CloudWatchAgentPolicy"
+  description = "Allows CloudWatch agent to publish metrics and logs and describe EC2 tags"
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "cloudwatch:PutMetricData",
+          "ec2:DescribeTags",
+          "cloudwatch:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
+# Attach policy to IAM Role
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.cloudwatch_agent_policy.arn
 }
