@@ -49,7 +49,7 @@ resource "aws_security_group" "application_security_group" {
     protocol        = "tcp"
     security_groups = [aws_security_group.load_balancer_sg.id]
   }
-  
+
   # Allow all outbound traffic
   egress {
     from_port   = 0

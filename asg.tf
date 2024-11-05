@@ -9,7 +9,7 @@ resource "aws_autoscaling_group" "app_asg" {
   target_group_arns   = [aws_lb_target_group.app_target_group.arn]
 
   launch_template {
-    id      = aws_launch_template.app_launch_template.id
+    id = aws_launch_template.app_launch_template.id
   }
 
   tag {

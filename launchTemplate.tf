@@ -28,6 +28,6 @@ resource "aws_launch_template" "app_launch_template" {
 
   network_interfaces {
     associate_public_ip_address = true
-    security_groups = [aws_security_group.application_security_group.id]
+    security_groups             = [aws_security_group.application_security_group.id]
   }
 }
