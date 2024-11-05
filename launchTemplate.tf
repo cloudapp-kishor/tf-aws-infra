@@ -20,9 +20,6 @@ resource "aws_launch_template" "app_launch_template" {
               echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
               echo "S3_BUCKET_NAME='${aws_s3_bucket.csye6225_s3_bucket.bucket}'" >> /opt/webapp/.env
               sudo systemctl restart webapp.service
-              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
-              sudo npm install -g statsd-cloudwatch-backend
-              statsd /opt/webapp/app/packer/statsd_config.js
               EOF
   )
 
