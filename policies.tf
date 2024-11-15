@@ -89,7 +89,7 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 
 # IAM Policy for SNS access in Lambda
 resource "aws_iam_policy" "ec2_sns_publish_policy" {
-  name = "${var.vpc_name}-ec2-sns-publish-policy"
+  name        = "${var.vpc_name}-ec2-sns-publish-policy"
   description = "Allow EC2 instances to publish to the SNS topic"
   policy = jsonencode({
     Version = "2012-10-17",
