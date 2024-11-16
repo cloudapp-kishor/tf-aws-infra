@@ -64,3 +64,7 @@ variable "domain_name" {
 variable "env" {
   description = "dev or demo"
 }
+
+variable "sendgrid_api_key" {
+  description = "sendgrid api key"
+}

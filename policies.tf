@@ -85,3 +85,28 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
   cooldown               = 60
   autoscaling_group_name = aws_autoscaling_group.app_asg.name
 }
+
+
+# IAM Policy for SNS access in Lambda
+resource "aws_iam_policy" "ec2_sns_publish_policy" {
+  name        = "${var.vpc_name}-ec2-sns-publish-policy"
+  description = "Allow EC2 instances to publish to the SNS topic"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sns:Publish"
+        ],
+        Resource = aws_sns_topic.user_registration_topic.arn
+      }
+    ]
+  })
+}
+
+# Attach the SNS Publish Policy to EC2 Role
+resource "aws_iam_role_policy_attachment" "attach_ec2_sns_publish_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.ec2_sns_publish_policy.arn
+}
