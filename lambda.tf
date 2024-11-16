@@ -6,7 +6,7 @@ resource "aws_lambda_function" "email_verification" {
   runtime       = "nodejs18.x"
   timeout       = 120
 
-  filename         = "${path.module}/serverless-forked.zip"
+  filename = "${path.module}/serverless-forked.zip"
 
   environment {
     variables = {
