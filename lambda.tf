@@ -6,9 +6,7 @@ resource "aws_lambda_function" "email_verification" {
   runtime       = "nodejs18.x"
   timeout       = 120
 
-  # Assuming Lambda code is in a zip file named `lambda_email_verification.zip`
   filename         = "${path.module}/serverless-forked.zip"
-  source_code_hash = filebase64sha256("${path.module}/serverless-forked.zip")
 
   environment {
     variables = {
