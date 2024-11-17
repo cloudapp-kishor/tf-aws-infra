@@ -1,6 +1,6 @@
 # Auto Scaling Group
 resource "aws_autoscaling_group" "app_asg" {
-  name                = "csye6225-asg"
+  name                = "csye6225_asg"
   default_cooldown    = 60
   desired_capacity    = 3
   max_size            = 5

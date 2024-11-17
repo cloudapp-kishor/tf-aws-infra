@@ -3,8 +3,8 @@ resource "aws_launch_template" "app_launch_template" {
   depends_on = [
     aws_security_group.application_security_group
   ]
-  name          = "${var.vpc_name}-lt"
-  image_id      = var.ami_id
+  name          = "webapp_lt"
+  image_id      = data.aws_ami.webapp_ami.id
   instance_type = "t2.micro"
   iam_instance_profile {
     name = aws_iam_instance_profile.ec2_instance_profile.name
@@ -28,5 +28,15 @@ resource "aws_launch_template" "app_launch_template" {
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.application_security_group.id]
+  }
+}
+
+# Fetch the latest AMI
+data "aws_ami" "webapp_ami" {
+  most_recent = true
+  owners      = [var.dev_account_id]
+  filter {
+    name   = "name"
+    values = ["webappAMI-*"]
   }
 }

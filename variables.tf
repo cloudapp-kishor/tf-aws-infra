@@ -19,10 +19,6 @@ variable "subnet_count" {
   default     = 3
 }
 
-variable "ami_id" {
-  description = "AMI ID for the EC2 instance"
-}
-
 variable "app_port" {
   description = "Port on which the application runs"
 }
@@ -67,4 +63,8 @@ variable "env" {
 
 variable "sendgrid_api_key" {
   description = "sendgrid api key"
+}
+
+variable "dev_account_id" {
+  description = "dev account id"
 }
