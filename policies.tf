@@ -34,6 +34,11 @@ resource "aws_iam_policy" "S3_access_policy" {
   })
 }
 
+# Attach policy to EC2 role
+resource "aws_iam_role_policy_attachment" "ec2_policy_attachment" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.S3_access_policy.arn
+}
 
 # IAM Policy to allow CloudWatch actions
 resource "aws_iam_policy" "cloudwatch_agent_policy" {
@@ -109,4 +114,62 @@ resource "aws_iam_policy" "ec2_sns_publish_policy" {
 resource "aws_iam_role_policy_attachment" "attach_ec2_sns_publish_policy" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ec2_sns_publish_policy.arn
+}
+
+# EC2 Secrets Manager Policy
+resource "aws_iam_policy" "secretsmanager_access_policy" {
+  name        = "${var.vpc_name}-secretsmanager-policy"
+  description = "Allow EC2 instances to retrieve secrets from Secrets Manager"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = [
+          aws_secretsmanager_secret.db_password_secret.arn,
+          aws_secretsmanager_secret.email_service_credentials.arn
+        ]
+      }
+    ]
+  })
+}
+
+# Attach Secrets Manager Policy to EC2 Role
+resource "aws_iam_role_policy_attachment" "attach_secretsmanager_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.secretsmanager_access_policy.arn
+}
+
+# Inline Policy for Lambda Secrets Manager Access
+resource "aws_iam_role_policy" "lambda_secretsmanager_policy" {
+  name = "${var.vpc_name}-lambda-secrets-policy"
+  role = aws_iam_role.lambda_execution_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # Allow access to the secret
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = [
+          aws_secretsmanager_secret.email_service_credentials.arn
+        ]
+      },
+      # Allow decrypt access to the KMS key associated with the secret
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt"
+        ],
+        Resource = [
+          aws_kms_key.secrets_kms.arn
+        ]
+      }
+    ]
+  })
 }

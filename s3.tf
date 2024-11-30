@@ -10,7 +10,8 @@ resource "aws_s3_bucket" "csye6225_s3_bucket" {
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
+        kms_master_key_id = aws_kms_key.s3_kms.arn
+        sse_algorithm     = "aws:kms"
       }
     }
   }
