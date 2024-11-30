@@ -14,7 +14,7 @@ resource "aws_launch_template" "app_launch_template" {
               rm -f /opt/webapp/.env
               touch /opt/webapp/.env
               echo "DB_USER='${var.db_username}'" >> /opt/webapp/.env
-              echo "DB_PASSWORD='${var.db_password}'" >> /opt/webapp/.env
+              echo "DB_PASSWORD='${local.db_password}'" >> /opt/webapp/.env
               echo "DB_NAME='${var.db_name}'" >> /opt/webapp/.env
               echo "PORT=${var.app_port}" >> /opt/webapp/.env
               echo "DB_HOST='${aws_db_instance.rds_instance.address}'" >> /opt/webapp/.env
@@ -39,4 +39,16 @@ data "aws_ami" "webapp_ami" {
     name   = "name"
     values = ["webappAMI-*"]
   }
+}
+
+# Fetch the secret version
+data "aws_secretsmanager_secret_version" "db_password_secret_version" {
+  depends_on = [
+    aws_secretsmanager_secret_version.db_password_secret_version
+  ]
+  secret_id = aws_secretsmanager_secret.db_password_secret.id
+}
+
+locals {
+  db_password = jsondecode(data.aws_secretsmanager_secret_version.db_password_secret_version.secret_string)["password"]
 }

@@ -1,5 +1,6 @@
 # Lambda Function for Email Verification
 resource "aws_lambda_function" "email_verification" {
+  depends_on    = [aws_secretsmanager_secret.email_service_credentials]
   function_name = "${var.vpc_name}-email-verification"
   role          = aws_iam_role.lambda_execution_role.arn
   handler       = "serverless-forked/index.handler"
@@ -10,8 +11,7 @@ resource "aws_lambda_function" "email_verification" {
 
   environment {
     variables = {
-      SENDGRID_API_KEY = var.sendgrid_api_key
-      SNS_TOPIC_ARN    = aws_sns_topic.user_registration_topic.arn
+      SNS_TOPIC_ARN = aws_sns_topic.user_registration_topic.arn
     }
   }
 }
