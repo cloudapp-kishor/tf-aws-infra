@@ -29,6 +29,18 @@ resource "aws_launch_template" "app_launch_template" {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.application_security_group.id]
   }
+
+  # Block device mapping with KMS encryption
+  block_device_mappings {
+    device_name = "/dev/sda1"
+
+    ebs {
+      volume_size = 8
+      volume_type = "gp2"
+      encrypted   = true
+      kms_key_id  = aws_kms_key.ebs.arn
+    }
+  }
 }
 
 # Fetch the latest AMI
