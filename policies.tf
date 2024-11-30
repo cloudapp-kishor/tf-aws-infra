@@ -126,7 +126,8 @@ resource "aws_iam_policy" "secretsmanager_access_policy" {
       {
         Effect = "Allow",
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ],
         Resource = [
           aws_secretsmanager_secret.db_password_secret.arn,
