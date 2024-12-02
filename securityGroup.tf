@@ -2,14 +2,14 @@
 resource "aws_security_group" "load_balancer_sg" {
   vpc_id = aws_vpc.main_vpc.id
 
-  ingress {
-    description      = "Allow HTTP traffic"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
+  # ingress {
+  #   description      = "Allow HTTP traffic"
+  #   from_port        = 80
+  #   to_port          = 80
+  #   protocol         = "tcp"
+  #   cidr_blocks      = ["0.0.0.0/0"]
+  #   ipv6_cidr_blocks = ["::/0"]
+  # }
 
   ingress {
     description      = "Allow HTTPS traffic"
@@ -35,14 +35,6 @@ resource "aws_security_group" "load_balancer_sg" {
 # Create Security Group for Application
 resource "aws_security_group" "application_security_group" {
   vpc_id = aws_vpc.main_vpc.id
-
-  ingress {
-    description = "Allow SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   ingress {
     description     = "Allow traffic from Load Balancer"

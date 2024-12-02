@@ -25,3 +25,9 @@ terraform validate
 4. Apply the Configuration
 Run the following command to apply the configuration:
 terraform apply
+
+5. Commands to SSL certificate
+$ aws acm import-certificate \
+    --certificate fileb://demo_kishorkashid_me.crt \
+    --private-key fileb://demo.key \
+    --certificate-chain fileb://demo_kishorkashid_me.ca-bundle
