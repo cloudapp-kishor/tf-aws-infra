@@ -68,3 +68,13 @@ variable "sendgrid_api_key" {
 variable "dev_account_id" {
   description = "dev account id"
 }
+
+variable "dev_certificate_arn" {
+  description = "ARN of the existing SSL certificate for the dev environment"
+  type        = string
+}
+
+variable "demo_certificate_arn" {
+  description = "ARN of the imported SSL certificate for the demo environment"
+  type        = string
+}
